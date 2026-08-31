@@ -90,7 +90,7 @@ Bid Ledger, evidence packets, review actions and model/tool traces.
 **Buyer outcomes** is designed for procurement leaders and category teams. It
 shows decision-ready RFQs, verified spend, identified savings, buyer hours
 saved, the RFQ outcome funnel, category savings, stage-level cycle time,
-intervention causes and supplier response-quality context. Savings are measured
+intervention causes, identified-to-realized savings and supplier response-quality context. Savings are measured
 against a qualified policy-defined baseline; missing or ineligible quotes never
 become the comparator.
 
@@ -99,10 +99,11 @@ and model-risk partners. It shows provenance coverage, decision-impact error,
 critical escalation recall, cost per decision-ready RFQ and P95 processing
 time. Trends then separate extraction, line matching, escalation and provenance
 quality, while stage latency, intervention root causes, protected evaluation
-gates, task-level autonomy and model unit economics make failures diagnosable.
+gates, task-level autonomy, buyer adoption and model unit economics make failures diagnosable.
 
-The shared filter bar scopes every metric by period, category, business unit,
-plant or region and RFQ status. A visible metric contract protects the
+The shared filter bar recalculates the selected cohort by period, category,
+business unit, plant or region and RFQ status, and the scoped KPIs can be
+exported as a metric-defined CSV. A visible metric contract protects the
 north-star—**decision-ready RFQs per buyer-hour**—by requiring complete material
 provenance and zero unresolved critical issues before an RFQ enters the
 numerator. The prototype labels its dataset as synthetic and exposes the same
@@ -655,6 +656,7 @@ The exact request and response contracts are documented in
 |---|---|---|---|
 | `GET` | `/api/health` | Inspect runtime mode, configured models and deterministic services | Health and configuration summary |
 | `GET` | `/api/analytics` | Read a filtered buyer-outcome and product/AI analytics snapshot | KPI, trend, funnel, quality, latency, autonomy and cost datasets |
+| `GET` | `/api/analytics/export` | Export the selected governed analytics cohort | CSV with scope, snapshot time, KPI values and metric definitions |
 | `POST` | `/api/compile` | Compile RFQ lines and vendor artifacts into the ledger | Versioned Bid Ledger and readiness |
 | `POST` | `/api/review` | Apply an approved benchmark or supplier exclusion | New ledger version and recalculated readiness |
 | `POST` | `/api/scenarios` | Generate feasible award options from verified suppliers | Policy-constrained award scenarios |

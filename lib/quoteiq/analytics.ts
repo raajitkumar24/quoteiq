@@ -5,11 +5,51 @@ export type AnalyticsCategory =
   | "MRO"
   | "IT hardware"
   | "Freight";
+export type AnalyticsBusinessUnit =
+  | "all"
+  | "Consumer"
+  | "Industrial"
+  | "Corporate services";
+export type AnalyticsRegion =
+  | "all"
+  | "Pune"
+  | "Ahmedabad"
+  | "Chennai"
+  | "NCR";
+export type AnalyticsRfqStatus =
+  | "all"
+  | "Compiling"
+  | "Needs review"
+  | "Decision-ready"
+  | "Award approved";
 
 export const analyticsPeriods: Record<AnalyticsPeriod, string> = {
   "30d": "Last 30 days",
   "90d": "Last 90 days",
   "180d": "Last 6 months",
+};
+
+export const analyticsBusinessUnits: Record<AnalyticsBusinessUnit, string> = {
+  all: "All business units",
+  Consumer: "Consumer",
+  Industrial: "Industrial",
+  "Corporate services": "Corporate services",
+};
+
+export const analyticsRegions: Record<AnalyticsRegion, string> = {
+  all: "All plants",
+  Pune: "Pune",
+  Ahmedabad: "Ahmedabad",
+  Chennai: "Chennai",
+  NCR: "NCR",
+};
+
+export const analyticsRfqStatuses: Record<AnalyticsRfqStatus, string> = {
+  all: "All RFQs",
+  Compiling: "Compiling",
+  "Needs review": "Needs review",
+  "Decision-ready": "Decision-ready",
+  "Award approved": "Award approved",
 };
 
 export const buyerTrendByPeriod = {
@@ -130,6 +170,19 @@ export const evaluationQueue = [
   { severity: "Shadow", suite: "Packaging autonomy L3", cases: 600, pass: "99.4%", owner: "Model Risk" },
 ];
 
+export const valueRealization = [
+  { label: "Identified", value: 6.84, rate: 100 },
+  { label: "Approved", value: 5.92, rate: 87 },
+  { label: "Realized", value: 5.42, rate: 79 },
+];
+
+export const featureAdoption = [
+  { label: "Evidence inspected", current: 88, prior: 79 },
+  { label: "Ask used", current: 71, prior: 58 },
+  { label: "Scenario generated", current: 64, prior: 49 },
+  { label: "Review resolved", current: 91, prior: 86 },
+];
+
 const periodFactor: Record<AnalyticsPeriod, number> = {
   "30d": 0.36,
   "90d": 1,
@@ -144,11 +197,59 @@ const categoryFactor: Record<AnalyticsCategory, number> = {
   Freight: 0.18,
 };
 
+const businessUnitFactor: Record<AnalyticsBusinessUnit, number> = {
+  all: 1,
+  Consumer: 0.46,
+  Industrial: 0.36,
+  "Corporate services": 0.18,
+};
+
+const regionFactor: Record<AnalyticsRegion, number> = {
+  all: 1,
+  Pune: 0.32,
+  Ahmedabad: 0.25,
+  Chennai: 0.24,
+  NCR: 0.19,
+};
+
+const statusFactor: Record<AnalyticsRfqStatus, number> = {
+  all: 1,
+  Compiling: 0.08,
+  "Needs review": 0.13,
+  "Decision-ready": 0.79,
+  "Award approved": 0.6,
+};
+
+export function getScopeFactor(
+  period: AnalyticsPeriod,
+  category: AnalyticsCategory,
+  businessUnit: AnalyticsBusinessUnit = "all",
+  region: AnalyticsRegion = "all",
+  status: AnalyticsRfqStatus = "all",
+) {
+  return (
+    periodFactor[period] *
+    categoryFactor[category] *
+    businessUnitFactor[businessUnit] *
+    regionFactor[region] *
+    statusFactor[status]
+  );
+}
+
 export function getBuyerKpis(
   period: AnalyticsPeriod,
   category: AnalyticsCategory,
+  businessUnit: AnalyticsBusinessUnit = "all",
+  region: AnalyticsRegion = "all",
+  status: AnalyticsRfqStatus = "all",
 ) {
-  const factor = periodFactor[period] * categoryFactor[category];
+  const factor = getScopeFactor(
+    period,
+    category,
+    businessUnit,
+    region,
+    status,
+  );
   return {
     decisionReady: Math.round(186 * factor),
     verifiedSpend: Number((124.6 * factor).toFixed(1)),
@@ -157,33 +258,114 @@ export function getBuyerKpis(
   };
 }
 
+export function getScopedOutcomeFunnel(
+  period: AnalyticsPeriod,
+  category: AnalyticsCategory,
+  businessUnit: AnalyticsBusinessUnit = "all",
+  region: AnalyticsRegion = "all",
+) {
+  const factor =
+    periodFactor[period] *
+    categoryFactor[category] *
+    businessUnitFactor[businessUnit] *
+    regionFactor[region];
+  return outcomeFunnel.map((item) => ({
+    ...item,
+    value: Math.max(1, Math.round(item.value * factor)),
+  }));
+}
+
+export function getScopedCategorySavings(
+  period: AnalyticsPeriod,
+  category: AnalyticsCategory,
+  businessUnit: AnalyticsBusinessUnit = "all",
+  region: AnalyticsRegion = "all",
+  status: AnalyticsRfqStatus = "all",
+) {
+  const factor =
+    periodFactor[period] *
+    businessUnitFactor[businessUnit] *
+    regionFactor[region] *
+    statusFactor[status];
+  return categorySavings
+    .filter((item) => category === "all" || item.category === category)
+    .map((item) => ({
+      ...item,
+      spend: Number((item.spend * factor).toFixed(2)),
+      savings: Number((item.savings * factor).toFixed(2)),
+    }));
+}
+
+export function getProductKpis(
+  period: AnalyticsPeriod,
+  category: AnalyticsCategory,
+) {
+  const recencyAdjustment = period === "30d" ? 0.25 : period === "180d" ? -0.35 : 0;
+  const profile = {
+    all: { provenance: 99.2, error: 0.18, cost: 182, p95: 3.7 },
+    Packaging: { provenance: 99.4, error: 0.14, cost: 169, p95: 3.4 },
+    MRO: { provenance: 98.4, error: 0.31, cost: 211, p95: 4.6 },
+    "IT hardware": { provenance: 99.5, error: 0.12, cost: 158, p95: 3.1 },
+    Freight: { provenance: 97.9, error: 0.38, cost: 224, p95: 4.9 },
+  }[category];
+  return {
+    provenanceCoverage: Number(
+      Math.min(100, profile.provenance + recencyAdjustment).toFixed(1),
+    ),
+    decisionImpactingErrorRate: Number(
+      Math.max(0, profile.error - recencyAdjustment / 5).toFixed(2),
+    ),
+    criticalEscalationRecall: 100,
+    costPerDecisionReadyRfq: Math.round(
+      profile.cost * (period === "30d" ? 0.96 : period === "180d" ? 1.04 : 1),
+    ),
+    p95ProcessingMinutes: Number(
+      (profile.p95 * (period === "30d" ? 0.95 : period === "180d" ? 1.05 : 1)).toFixed(1),
+    ),
+  };
+}
+
 export function getAnalyticsSnapshot(
   period: AnalyticsPeriod = "90d",
   category: AnalyticsCategory = "all",
+  businessUnit: AnalyticsBusinessUnit = "all",
+  region: AnalyticsRegion = "all",
+  status: AnalyticsRfqStatus = "all",
 ) {
+  const productQuality = getProductKpis(period, category);
   return {
     asOf: "2026-08-29T18:42:00+05:30",
     period,
     category,
-    buyerKpis: getBuyerKpis(period, category),
+    businessUnit,
+    region,
+    status,
+    buyerKpis: getBuyerKpis(period, category, businessUnit, region, status),
     buyerTrend: buyerTrendByPeriod[period],
-    categorySavings,
-    outcomeFunnel,
+    categorySavings: getScopedCategorySavings(
+      period,
+      category,
+      businessUnit,
+      region,
+      status,
+    ),
+    outcomeFunnel: getScopedOutcomeFunnel(
+      period,
+      category,
+      businessUnit,
+      region,
+    ),
     cycleStages,
     issueDrivers,
     supplierPerformance,
-    productQuality: {
-      provenanceCoverage: 99.2,
-      decisionImpactingErrorRate: 0.18,
-      criticalEscalationRecall: 100,
-      costPerDecisionReadyRfq: 182,
-      p95ProcessingMinutes: 3.7,
-    },
+    productQuality,
     qualityTrend,
     latencyProfile,
     interventionDrivers,
     autonomyTasks,
     modelUsage,
     evaluationQueue,
+    valueRealization,
+    featureAdoption,
   };
 }

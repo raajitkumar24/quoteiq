@@ -20,6 +20,7 @@ import {
   ClipboardCheck,
   Clock3,
   Database,
+  Download,
   FileCheck2,
   FileSearch,
   FileSpreadsheet,
@@ -75,22 +76,31 @@ import {
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  analyticsBusinessUnits,
   analyticsPeriods,
+  analyticsRegions,
+  analyticsRfqStatuses,
   autonomyTasks,
   buyerTrendByPeriod,
-  categorySavings,
   cycleStages,
   evaluationQueue,
+  featureAdoption,
   getBuyerKpis,
+  getProductKpis,
+  getScopedCategorySavings,
+  getScopedOutcomeFunnel,
   interventionDrivers,
   issueDrivers,
   latencyProfile,
   modelUsage,
-  outcomeFunnel,
   qualityTrend,
   supplierPerformance,
+  valueRealization,
+  type AnalyticsBusinessUnit,
   type AnalyticsCategory,
   type AnalyticsPeriod,
+  type AnalyticsRegion,
+  type AnalyticsRfqStatus,
 } from "@/lib/quoteiq/analytics";
 
 type View =
@@ -2335,30 +2345,59 @@ function Decision({
 function Analytics() {
   const [period, setPeriod] = useState<AnalyticsPeriod>("90d");
   const [category, setCategory] = useState<AnalyticsCategory>("all");
-  const [businessUnit, setBusinessUnit] = useState("All business units");
-  const [region, setRegion] = useState("All plants");
-  const [rfqStatus, setRfqStatus] = useState("All RFQs");
+  const [businessUnit, setBusinessUnit] =
+    useState<AnalyticsBusinessUnit>("all");
+  const [region, setRegion] = useState<AnalyticsRegion>("all");
+  const [rfqStatus, setRfqStatus] = useState<AnalyticsRfqStatus>("all");
   const [analyticsView, setAnalyticsView] = useState("buyer");
-  const kpis = getBuyerKpis(period, category);
-  const trend = buyerTrendByPeriod[period];
-  const savingsData =
-    category === "all"
-      ? categorySavings
-      : categorySavings.filter((item) => item.category === category);
-  const scopeLabel = [
-    analyticsPeriods[period],
-    category === "all" ? "All categories" : category,
+  const kpis = getBuyerKpis(
+    period,
+    category,
     businessUnit,
     region,
     rfqStatus,
+  );
+  const productKpis = getProductKpis(period, category);
+  const trend = buyerTrendByPeriod[period];
+  const savingsData = getScopedCategorySavings(
+    period,
+    category,
+    businessUnit,
+    region,
+    rfqStatus,
+  );
+  const scopedFunnel = getScopedOutcomeFunnel(
+    period,
+    category,
+    businessUnit,
+    region,
+  );
+  const p95Minutes = Math.floor(productKpis.p95ProcessingMinutes);
+  const p95Seconds = Math.round(
+    (productKpis.p95ProcessingMinutes - p95Minutes) * 60,
+  );
+  const productP95Label = `${p95Minutes}m ${p95Seconds}s`;
+  const scopeLabel = [
+    analyticsPeriods[period],
+    category === "all" ? "All categories" : category,
+    analyticsBusinessUnits[businessUnit],
+    analyticsRegions[region],
+    analyticsRfqStatuses[rfqStatus],
   ].join(" · ");
+  const exportHref = `/api/analytics/export?${new URLSearchParams({
+    period,
+    category,
+    businessUnit,
+    region,
+    status: rfqStatus,
+  }).toString()}`;
 
   function resetFilters() {
     setPeriod("90d");
     setCategory("all");
-    setBusinessUnit("All business units");
-    setRegion("All plants");
-    setRfqStatus("All RFQs");
+    setBusinessUnit("all");
+    setRegion("all");
+    setRfqStatus("all");
   }
 
   return (
@@ -2414,12 +2453,13 @@ function Analytics() {
           <select
             aria-label="Analytics business unit"
             value={businessUnit}
-            onChange={(event) => setBusinessUnit(event.target.value)}
+            onChange={(event) =>
+              setBusinessUnit(event.target.value as AnalyticsBusinessUnit)
+            }
           >
-            <option>All business units</option>
-            <option>Consumer</option>
-            <option>Industrial</option>
-            <option>Corporate services</option>
+            {Object.entries(analyticsBusinessUnits).map(([value, label]) => (
+              <option value={value} key={value}>{label}</option>
+            ))}
           </select>
         </label>
         <label>
@@ -2427,13 +2467,13 @@ function Analytics() {
           <select
             aria-label="Analytics plant or region"
             value={region}
-            onChange={(event) => setRegion(event.target.value)}
+            onChange={(event) =>
+              setRegion(event.target.value as AnalyticsRegion)
+            }
           >
-            <option>All plants</option>
-            <option>Pune</option>
-            <option>Ahmedabad</option>
-            <option>Chennai</option>
-            <option>NCR</option>
+            {Object.entries(analyticsRegions).map(([value, label]) => (
+              <option value={value} key={value}>{label}</option>
+            ))}
           </select>
         </label>
         <label>
@@ -2441,15 +2481,18 @@ function Analytics() {
           <select
             aria-label="Analytics RFQ status"
             value={rfqStatus}
-            onChange={(event) => setRfqStatus(event.target.value)}
+            onChange={(event) =>
+              setRfqStatus(event.target.value as AnalyticsRfqStatus)
+            }
           >
-            <option>All RFQs</option>
-            <option>Compiling</option>
-            <option>Needs review</option>
-            <option>Decision-ready</option>
-            <option>Award approved</option>
+            {Object.entries(analyticsRfqStatuses).map(([value, label]) => (
+              <option value={value} key={value}>{label}</option>
+            ))}
           </select>
         </label>
+        <a className="analytics-reset" href={exportHref} download>
+          <Download size={13} /> Export CSV
+        </a>
         <button className="analytics-reset" onClick={resetFilters}>
           <RefreshCcw size={13} /> Reset
         </button>
@@ -2577,7 +2620,7 @@ function Analytics() {
               icon={Route}
             >
               <div className="analytics-funnel">
-                {outcomeFunnel.map((item, index) => (
+                {scopedFunnel.map((item, index) => (
                   <div className="analytics-funnel-row" key={item.label}>
                     <div>
                       <span>{item.label}</span>
@@ -2587,7 +2630,7 @@ function Analytics() {
                       <i style={{ width: `${item.rate}%` }} />
                     </div>
                     <small>
-                      {item.rate}%{index ? ` · ${outcomeFunnel[index - 1].value - item.value} exited` : ""}
+                      {item.rate}%{index ? ` · ${scopedFunnel[index - 1].value - item.value} exited` : ""}
                     </small>
                   </div>
                 ))}
@@ -2597,7 +2640,7 @@ function Analytics() {
                 <span>
                   <strong>Largest controllable drop: decision readiness</strong>
                   <small>
-                    38 RFQs are waiting on vendor clarification or policy context.
+                    {Math.max(0, scopedFunnel[1].value - scopedFunnel[2].value)} RFQs are waiting on vendor clarification or policy context.
                   </small>
                 </span>
               </div>
@@ -2681,6 +2724,30 @@ function Analytics() {
                 </div>
               </div>
             </AnalyticsPanel>
+
+            <AnalyticsPanel
+              eyebrow="VALUE REALIZATION"
+              title="Savings from signal to booked value"
+              subtitle="Identified, approved and realized against the qualified baseline"
+              icon={TrendingUp}
+            >
+              <div className="analytics-value-list">
+                {valueRealization.map((item) => (
+                  <div key={item.label}>
+                    <div>
+                      <span>{item.label}</span>
+                      <strong>₹{(kpis.savings * item.rate / 100).toFixed(2)}M</strong>
+                      <small>{item.rate}%</small>
+                    </div>
+                    <div><i style={{ width: `${item.rate}%` }} /></div>
+                  </div>
+                ))}
+              </div>
+              <div className="analytics-outcome-strip">
+                <span><strong>94%</strong><small>Awards within policy</small></span>
+                <span><strong>2.6×</strong><small>Verified sourcing ROI</small></span>
+              </div>
+            </AnalyticsPanel>
           </div>
 
           <AnalyticsPanel
@@ -2721,11 +2788,11 @@ function Analytics() {
 
         <TabsContent value="product" className="analytics-tab-content">
           <div className="analytics-kpis product-kpis">
-            <AnalyticsKpi icon={ShieldCheck} label="Provenance coverage" value="99.2%" change="+0.7pp" detail="Material facts with source" title="Share of material ledger facts linked to inspectable source evidence." />
-            <AnalyticsKpi icon={AlertTriangle} label="Decision-impact error" value="0.18%" change="-0.11pp" detail="Per decision-ready RFQ" title="Errors that can change ranking, eligibility, landed cost or allocation." inverse />
-            <AnalyticsKpi icon={Target} label="Critical escalation recall" value="100%" change="Hard gate met" detail="24 / 24 eval cases" title="Share of known decision-critical uncertainty correctly routed to review." />
-            <AnalyticsKpi icon={CircleDollarSign} label="Cost / ready RFQ" value="₹182" change="-14%" detail="Models + deterministic tools" title="Inference and processing cost divided by decision-ready RFQs." inverse />
-            <AnalyticsKpi icon={Timer} label="P95 processing" value="3m 42s" change="-38s" detail="Artifact to compiled ledger" title="95th percentile end-to-end compilation time, excluding human review." inverse />
+            <AnalyticsKpi icon={ShieldCheck} label="Provenance coverage" value={`${productKpis.provenanceCoverage}%`} change="+0.7pp" detail="Material facts with source" title="Share of material ledger facts linked to inspectable source evidence." />
+            <AnalyticsKpi icon={AlertTriangle} label="Decision-impact error" value={`${productKpis.decisionImpactingErrorRate}%`} change="-0.11pp" detail="Per decision-ready RFQ" title="Errors that can change ranking, eligibility, landed cost or allocation." inverse />
+            <AnalyticsKpi icon={Target} label="Critical escalation recall" value={`${productKpis.criticalEscalationRecall}%`} change="Hard gate met" detail="24 / 24 eval cases" title="Share of known decision-critical uncertainty correctly routed to review." />
+            <AnalyticsKpi icon={CircleDollarSign} label="Cost / ready RFQ" value={`₹${productKpis.costPerDecisionReadyRfq}`} change="-14%" detail="Models + deterministic tools" title="Inference and processing cost divided by decision-ready RFQs." inverse />
+            <AnalyticsKpi icon={Timer} label="P95 processing" value={productP95Label} change="-38s" detail="Artifact to compiled ledger" title="95th percentile end-to-end compilation time, excluding human review." inverse />
           </div>
 
           <div className="analytics-grid analytics-product-top">
@@ -2786,6 +2853,24 @@ function Analytics() {
                       {[0, 1, 2, 3].map((level) => <i className={level <= task.level ? "active" : ""} key={level} />)}
                     </div>
                     <b>{task.label}</b>
+                  </div>
+                ))}
+              </div>
+            </AnalyticsPanel>
+
+            <AnalyticsPanel eyebrow="ADOPTION & USAGE" title="Trust-building features are becoming habitual" subtitle="Current cohort versus prior comparable cohort" icon={UserCheck}>
+              <div className="analytics-adoption-summary">
+                <span><strong>62</strong><small>Weekly active buyers</small></span>
+                <span><strong>84%</strong><small>8-week retained</small></span>
+              </div>
+              <div className="analytics-adoption-list">
+                {featureAdoption.map((item) => (
+                  <div key={item.label}>
+                    <div><span>{item.label}</span><strong>{item.current}%</strong></div>
+                    <div className="analytics-adoption-track">
+                      <i style={{ width: `${item.current}%` }} />
+                      <b style={{ left: `${item.prior}%` }} title={`Prior cohort: ${item.prior}%`} />
+                    </div>
                   </div>
                 ))}
               </div>

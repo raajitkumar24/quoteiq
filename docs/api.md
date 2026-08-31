@@ -10,12 +10,18 @@ Returns runtime mode, model identifiers and deterministic services.
 
 Returns the governed buyer-outcome and product/AI analytics snapshot used by
 the Analytics workspace. Optional query parameters are `period` (`30d`, `90d`,
-`180d`) and `category` (`all`, `Packaging`, `MRO`, `IT hardware`, `Freight`).
-Invalid values fall back to `90d` and `all`.
+`180d`), `category` (`all`, `Packaging`, `MRO`, `IT hardware`, `Freight`),
+`businessUnit`, `region` and `status`. Unsupported values return HTTP 400.
 
 ```bash
-curl "http://localhost:3000/api/analytics?period=90d&category=Packaging"
+curl "http://localhost:3000/api/analytics?period=90d&category=Packaging&businessUnit=Consumer&region=Pune&status=Decision-ready"
 ```
+
+## `GET /api/analytics/export`
+
+Accepts the same analytics scope parameters and returns a governed CSV with the
+snapshot timestamp, visible cohort, synthetic-data classification, KPI values
+and metric definitions. The Analytics workspace links directly to this route.
 
 ## `POST /api/compile`
 

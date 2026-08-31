@@ -41,6 +41,11 @@ The product view treats quality as a decision chain rather than one blended mode
 - protected evaluation gates; and
 - model/tool volume, cost, success and fallback rates.
 
+It also includes weekly active buyers, eight-week retention and adoption of
+trust-building workflows such as evidence inspection, Ask, scenario generation
+and review resolution. Product behavior sits beside quality and safety so
+increased usage cannot hide a degraded decision chain.
+
 The combination of quality, safety, latency and cost makes regressions diagnosable. For example, higher review volume caused by missing buyer context should not be attributed to the extraction model.
 
 ## Global filters
@@ -54,6 +59,11 @@ The combination of quality, safety, latency and cost makes regressions diagnosab
 | RFQ status | Focus the analysis on a workflow cohort | Compiling, Needs review, Decision-ready, Award approved |
 
 All tiles and charts inherit the same visible filter scope. Reset returns the dashboard to the 90-day, all-category, all-unit, all-plant and all-status cohort.
+
+The filters are operational rather than decorative: they recalculate the
+selected cohort, summary metrics and applicable charts. Product quality metrics
+respond to period and category. **Export CSV** downloads the selected buyer and
+product KPI cohort together with its visible scope and metric definitions.
 
 ## Metric dictionary
 
@@ -77,10 +87,12 @@ Analytics are derived from RFQ lifecycle events, the versioned Bid Ledger, Evide
 The prototype uses clearly labeled synthetic demonstration data. The reference endpoint exposes the same shape used by the interface:
 
 ```http
-GET /api/analytics?period=90d&category=Packaging
+GET /api/analytics?period=90d&category=Packaging&businessUnit=Consumer&region=Pune&status=Decision-ready
 ```
 
-Supported periods are `30d`, `90d` and `180d`. Supported categories are `all`, `Packaging`, `MRO`, `IT hardware` and `Freight`.
+Supported periods are `30d`, `90d` and `180d`. Supported categories are `all`,
+`Packaging`, `MRO`, `IT hardware` and `Freight`. The API also accepts the same
+business-unit, region and RFQ-status values shown in the interface.
 
 ## Interpretation rules
 
@@ -89,4 +101,3 @@ Supported periods are `30d`, `90d` and `180d`. Supported categories are `all`, `
 - Change autonomy only for a narrow task after its quality gate, sample-size requirement and policy permission all pass.
 - Keep critical escalation recall and decision-impact error visible when throughput rises.
 - Treat period-over-period changes as directional until cohort composition and workflow changes have been checked.
-
