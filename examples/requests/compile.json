@@ -1,0 +1,72 @@
+{
+  "rfqId": "RFQ-2027-014",
+  "rfqLines": [
+    {
+      "id": "PKG-001",
+      "description": "5-ply BC flute corrugated box, 18 BF",
+      "quantity": 12000,
+      "uom": "kg",
+      "attributes": {
+        "ply": 5,
+        "burstFactor": 18,
+        "destination": "Pune Zone 2"
+      },
+      "mandatory": true
+    },
+    {
+      "id": "PKG-002",
+      "description": "3-ply B flute corrugated box, 16 BF",
+      "quantity": 10000,
+      "uom": "kg",
+      "attributes": {
+        "ply": 3,
+        "burstFactor": 16,
+        "destination": "Pune Zone 2"
+      },
+      "mandatory": true
+    },
+    {
+      "id": "PKG-003",
+      "description": "5-ply heavy-duty corrugated box, 22 BF",
+      "quantity": 10000,
+      "uom": "kg",
+      "attributes": {
+        "ply": 5,
+        "burstFactor": 22,
+        "destination": "Pune Zone 2"
+      },
+      "mandatory": true
+    }
+  ],
+  "vendors": [
+    { "id": "packright", "name": "PackRight" },
+    { "id": "boxco", "name": "BoxCo" },
+    { "id": "corrpro", "name": "CorrPro" }
+  ],
+  "artifacts": [
+    {
+      "id": "artifact-packright-email",
+      "vendorId": "packright",
+      "fileName": "packright-response.eml",
+      "mimeType": "message/rfc822",
+      "text": "₹42/kg for the 5-ply, ₹38/kg for the 3-ply, rest same as last year. Freight extra at actuals. Delivery 10 days.",
+      "version": 1
+    },
+    {
+      "id": "artifact-boxco-sheet",
+      "vendorId": "boxco",
+      "fileName": "boxco-commercial.csv",
+      "mimeType": "text/csv",
+      "text": "Item,Rate,UOM,Freight,Lead time\nPKG-001,41.90,kg,Included,7 days\nPKG-002,37.80,kg,Included,7 days\nPKG-003,43.25,kg,Included,7 days",
+      "version": 1
+    },
+    {
+      "id": "artifact-corrpro-note",
+      "vendorId": "corrpro",
+      "fileName": "corrpro-rate-card.txt",
+      "mimeType": "text/plain",
+      "text": "PKG-001 INR 42.60/kg; PKG-002 INR 39/kg; PKG-003 INR 44/kg. Freight included. Delivery within 5 days. Net 30 days from receipt.",
+      "version": 2
+    }
+  ]
+}
