@@ -31,5 +31,6 @@ test("renders QuoteIQ product metadata and populated demo content", async () => 
   assert.match(html, /Corrugated Packaging FY27/);
   assert.match(html, /30 requested lines/);
   assert.match(html, /Documentation/);
+  assert.match(html, /Analytics/);
   assert.doesNotMatch(html, /codex-preview/);
 });

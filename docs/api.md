@@ -6,6 +6,17 @@ All endpoints accept and return JSON. Demo mode requires no credentials.
 
 Returns runtime mode, model identifiers and deterministic services.
 
+## `GET /api/analytics`
+
+Returns the governed buyer-outcome and product/AI analytics snapshot used by
+the Analytics workspace. Optional query parameters are `period` (`30d`, `90d`,
+`180d`) and `category` (`all`, `Packaging`, `MRO`, `IT hardware`, `Freight`).
+Invalid values fall back to `90d` and `all`.
+
+```bash
+curl "http://localhost:3000/api/analytics?period=90d&category=Packaging"
+```
+
 ## `POST /api/compile`
 
 Required body fields: `rfqId`, `rfqLines[]`, `vendors[]` and

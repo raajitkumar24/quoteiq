@@ -81,7 +81,37 @@ Deterministic services calculate eligibility, totals and allocations. The model
 explains material trade-offs using those verified outputs. At AI Control Level
 2, the system can prepare a scenario but cannot award a supplier.
 
-### 4. Trust & Learning: improve without silent self-training
+### 4. Analytics: connect procurement value to system quality
+
+The Analytics workspace sits immediately below Award Scenarios in the main
+navigation. It provides two governed views over the same RFQ events, versioned
+Bid Ledger, evidence packets, review actions and model/tool traces.
+
+**Buyer outcomes** is designed for procurement leaders and category teams. It
+shows decision-ready RFQs, verified spend, identified savings, buyer hours
+saved, the RFQ outcome funnel, category savings, stage-level cycle time,
+intervention causes and supplier response-quality context. Savings are measured
+against a qualified policy-defined baseline; missing or ineligible quotes never
+become the comparator.
+
+**Product & AI operations** is designed for product managers, AI quality owners
+and model-risk partners. It shows provenance coverage, decision-impact error,
+critical escalation recall, cost per decision-ready RFQ and P95 processing
+time. Trends then separate extraction, line matching, escalation and provenance
+quality, while stage latency, intervention root causes, protected evaluation
+gates, task-level autonomy and model unit economics make failures diagnosable.
+
+The shared filter bar scopes every metric by period, category, business unit,
+plant or region and RFQ status. A visible metric contract protects the
+north-star—**decision-ready RFQs per buyer-hour**—by requiring complete material
+provenance and zero unresolved critical issues before an RFQ enters the
+numerator. The prototype labels its dataset as synthetic and exposes the same
+snapshot through `GET /api/analytics`.
+
+See [the analytics metric dictionary and interpretation guide](docs/analytics.md)
+for formulas, guardrails, data lineage and production implementation notes.
+
+### 5. Trust & Learning: improve without silent self-training
 
 ![Trust and Learning showing a captured human decision, controlled learning
 stages and feedback routing](docs/images/trust-learning.jpg)
@@ -100,7 +130,7 @@ signals are routed to different systems: fact corrections become extraction or
 mapping evals, policy corrections improve retrieval and rules, preferences are
 scoped to the user or organization, and one-off exceptions remain audit-only.
 
-### 5. Documentation: business and technical context in the product
+### 6. Documentation: business and technical context in the product
 
 The Documentation tab explains product scope, the buyer journey, the Verified
 Bid Ledger, model responsibilities, intervention logic, trust packets,
@@ -119,6 +149,7 @@ and links back into the product workflows it describes.
 | Deterministic role | Normalize, calculate, validate and optimize |
 | Human role | Resolve material ambiguity and approve consequential actions |
 | Main trust mechanism | Evidence + context + impact + human judgment |
+| Analytics model | Buyer outcomes + product/AI operations with shared governed filters |
 | Autonomy model | Earned per task, constrained by policy and user permission |
 | Reference modes | Keyless deterministic demo and provider-backed live mode |
 
@@ -185,7 +216,8 @@ The governing rule is simple:
 | 7. Compare | Inspect normalized bids and source evidence | Read from the Verified Bid Ledger | Cell-level provenance and verification status |
 | 8. Ask | Ask a sourcing question in business language | Plan, retrieve, calculate and explain | Answer can be informational, provisional, decision-grade or blocked |
 | 9. Decide | Compare feasible award scenarios | Generate policy-constrained allocations and trade-offs | AI prepares; the buyer approves |
-| 10. Learn | Correct the system and record why | Route feedback into context, model, policy or exception workflows | No silent online learning |
+| 10. Measure | Track value, flow and system quality | Join RFQ, ledger, review, evaluation and trace events | Shared scope, metric contracts and visible lineage |
+| 11. Learn | Correct the system and record why | Route feedback into context, model, policy or exception workflows | No silent online learning |
 
 ### Claim lifecycle
 
@@ -531,6 +563,7 @@ app/
   api/                 HTTP reference endpoints
   page.tsx             Interactive product prototype
 lib/quoteiq/
+  analytics.ts         Governed buyer and product analytics snapshot
   types.ts             Canonical RFQ, claim, ledger and packet types
   pipeline.ts          Demo/live compilation orchestration
   providers.ts         Gemini and OpenAI adapters
@@ -542,7 +575,7 @@ lib/quoteiq/
   sample-data.ts       Rich synthetic RFQ and supplier data
 prompts/               Versionable production prompt templates
 tests/domain/          Trust, normalization and decision regression tests
-docs/                  Product and technical documentation
+docs/                  Product, analytics and technical documentation
 ```
 
 ## Quick start
@@ -606,6 +639,8 @@ Provider keys are read only in server-side modules. Never expose them through
 ```bash
 curl http://localhost:3000/api/health
 
+curl "http://localhost:3000/api/analytics?period=90d&category=Packaging"
+
 curl -X POST http://localhost:3000/api/compile \
   -H "content-type: application/json" \
   --data @examples/requests/compile.json
@@ -619,6 +654,7 @@ The exact request and response contracts are documented in
 | Method | Endpoint | Purpose | Primary response |
 |---|---|---|---|
 | `GET` | `/api/health` | Inspect runtime mode, configured models and deterministic services | Health and configuration summary |
+| `GET` | `/api/analytics` | Read a filtered buyer-outcome and product/AI analytics snapshot | KPI, trend, funnel, quality, latency, autonomy and cost datasets |
 | `POST` | `/api/compile` | Compile RFQ lines and vendor artifacts into the ledger | Versioned Bid Ledger and readiness |
 | `POST` | `/api/review` | Apply an approved benchmark or supplier exclusion | New ledger version and recalculated readiness |
 | `POST` | `/api/scenarios` | Generate feasible award options from verified suppliers | Policy-constrained award scenarios |

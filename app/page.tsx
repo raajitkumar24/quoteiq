@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from "react";
 import {
+  Activity,
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
+  ArrowUpRight,
+  BarChart3,
   Bot,
   Calculator,
   BookOpenCheck,
@@ -13,12 +16,14 @@ import {
   CheckCircle2,
   ChevronRight,
   CircleHelp,
+  CircleDollarSign,
   ClipboardCheck,
   Clock3,
   Database,
   FileCheck2,
   FileSearch,
   FileSpreadsheet,
+  Filter,
   Gauge,
   GitCompareArrows,
   Layers3,
@@ -26,6 +31,7 @@ import {
   LockKeyhole,
   MessageSquareText,
   Network,
+  PieChart as PieChartIcon,
   RefreshCcw,
   Route,
   Save,
@@ -37,11 +43,28 @@ import {
   Sparkles,
   Target,
   TestTube2,
+  Timer,
+  TrendingUp,
   UserCheck,
   WandSparkles,
   Workflow,
   X,
 } from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { Progress } from "@/components/ui/progress";
 import {
   Sheet,
@@ -51,9 +74,34 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  analyticsPeriods,
+  autonomyTasks,
+  buyerTrendByPeriod,
+  categorySavings,
+  cycleStages,
+  evaluationQueue,
+  getBuyerKpis,
+  interventionDrivers,
+  issueDrivers,
+  latencyProfile,
+  modelUsage,
+  outcomeFunnel,
+  qualityTrend,
+  supplierPerformance,
+  type AnalyticsCategory,
+  type AnalyticsPeriod,
+} from "@/lib/quoteiq/analytics";
 
 type View =
-  "overview" | "review" | "compare" | "decision" | "trust" | "system" | "docs";
+  | "overview"
+  | "review"
+  | "compare"
+  | "decision"
+  | "analytics"
+  | "trust"
+  | "system"
+  | "docs";
 type Evidence = {
   value: string;
   raw: string;
@@ -67,6 +115,7 @@ const nav: { id: View; label: string; icon: typeof Gauge }[] = [
   { id: "review", label: "Review issues", icon: FileCheck2 },
   { id: "compare", label: "Compare bids", icon: FileSpreadsheet },
   { id: "decision", label: "Award scenarios", icon: Layers3 },
+  { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "trust", label: "Trust & learning", icon: ShieldCheck },
   { id: "system", label: "AI system", icon: Bot },
   { id: "docs", label: "Documentation", icon: BookOpenCheck },
@@ -254,6 +303,7 @@ export default function Home() {
               freightResolution={freightResolution}
             />
           )}
+          {view === "analytics" && <Analytics />}
           {view === "trust" && <TrustLearning />}
           {view === "system" && <SystemView />}
           {view === "docs" && <Documentation onNavigate={openView} />}
@@ -2282,6 +2332,578 @@ function Decision({
   );
 }
 
+function Analytics() {
+  const [period, setPeriod] = useState<AnalyticsPeriod>("90d");
+  const [category, setCategory] = useState<AnalyticsCategory>("all");
+  const [businessUnit, setBusinessUnit] = useState("All business units");
+  const [region, setRegion] = useState("All plants");
+  const [rfqStatus, setRfqStatus] = useState("All RFQs");
+  const [analyticsView, setAnalyticsView] = useState("buyer");
+  const kpis = getBuyerKpis(period, category);
+  const trend = buyerTrendByPeriod[period];
+  const savingsData =
+    category === "all"
+      ? categorySavings
+      : categorySavings.filter((item) => item.category === category);
+  const scopeLabel = [
+    analyticsPeriods[period],
+    category === "all" ? "All categories" : category,
+    businessUnit,
+    region,
+    rfqStatus,
+  ].join(" · ");
+
+  function resetFilters() {
+    setPeriod("90d");
+    setCategory("all");
+    setBusinessUnit("All business units");
+    setRegion("All plants");
+    setRfqStatus("All RFQs");
+  }
+
+  return (
+    <>
+      <Subhead
+        eyebrow="PORTFOLIO INTELLIGENCE"
+        title="Measure decisions, trust and system quality"
+        text="One governed analytics layer for procurement outcomes and the AI product operating them. Every metric is scoped to an immutable ledger snapshot."
+      />
+
+      <section className="analytics-filterbar panel">
+        <div className="analytics-filter-title">
+          <Filter size={15} />
+          <span>
+            <strong>Analytics scope</strong>
+            <small>{scopeLabel}</small>
+          </span>
+        </div>
+        <label>
+          Period
+          <select
+            aria-label="Analytics period"
+            value={period}
+            onChange={(event) =>
+              setPeriod(event.target.value as AnalyticsPeriod)
+            }
+          >
+            {Object.entries(analyticsPeriods).map(([value, label]) => (
+              <option value={value} key={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Category
+          <select
+            aria-label="Analytics category"
+            value={category}
+            onChange={(event) =>
+              setCategory(event.target.value as AnalyticsCategory)
+            }
+          >
+            <option value="all">All categories</option>
+            <option>Packaging</option>
+            <option>MRO</option>
+            <option>IT hardware</option>
+            <option>Freight</option>
+          </select>
+        </label>
+        <label>
+          Business unit
+          <select
+            aria-label="Analytics business unit"
+            value={businessUnit}
+            onChange={(event) => setBusinessUnit(event.target.value)}
+          >
+            <option>All business units</option>
+            <option>Consumer</option>
+            <option>Industrial</option>
+            <option>Corporate services</option>
+          </select>
+        </label>
+        <label>
+          Plant / region
+          <select
+            aria-label="Analytics plant or region"
+            value={region}
+            onChange={(event) => setRegion(event.target.value)}
+          >
+            <option>All plants</option>
+            <option>Pune</option>
+            <option>Ahmedabad</option>
+            <option>Chennai</option>
+            <option>NCR</option>
+          </select>
+        </label>
+        <label>
+          RFQ status
+          <select
+            aria-label="Analytics RFQ status"
+            value={rfqStatus}
+            onChange={(event) => setRfqStatus(event.target.value)}
+          >
+            <option>All RFQs</option>
+            <option>Compiling</option>
+            <option>Needs review</option>
+            <option>Decision-ready</option>
+            <option>Award approved</option>
+          </select>
+        </label>
+        <button className="analytics-reset" onClick={resetFilters}>
+          <RefreshCcw size={13} /> Reset
+        </button>
+      </section>
+
+      <section className="analytics-northstar">
+        <div className="analytics-northstar-icon">
+          <Target size={19} />
+        </div>
+        <div>
+          <span>NORTH-STAR METRIC</span>
+          <strong>Decision-ready RFQs per buyer-hour</strong>
+          <small>
+            RFQs safe for the scoped decision ÷ active buyer review hours
+          </small>
+        </div>
+        <div className="analytics-northstar-value">
+          <strong>0.46</strong>
+          <span>
+            <ArrowUpRight size={13} /> 44% vs manual baseline
+          </span>
+        </div>
+        <div className="analytics-trust-note">
+          <ShieldCheck size={14} />
+          <span>
+            <strong>Metric contract</strong>
+            <small>
+              Requires complete provenance and zero unresolved critical issues.
+            </small>
+          </span>
+        </div>
+      </section>
+
+      <Tabs
+        className="analytics-tabs"
+        value={analyticsView}
+        onValueChange={setAnalyticsView}
+      >
+        <div className="analytics-viewbar">
+          <div>
+            <span className="eyebrow">PERSONA VIEW</span>
+            <strong>
+              {analyticsView === "buyer"
+                ? "Procurement outcomes"
+                : "Product & AI operations"}
+            </strong>
+          </div>
+          <TabsList>
+            <TabsTrigger value="buyer">
+              <FileSpreadsheet size={14} /> Buyer outcomes
+            </TabsTrigger>
+            <TabsTrigger value="product">
+              <Activity size={14} /> Product & AI
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="buyer" className="analytics-tab-content">
+          <div className="analytics-kpis buyer-kpis">
+            <AnalyticsKpi
+              icon={FileCheck2}
+              label="Decision-ready RFQs"
+              value={kpis.decisionReady.toLocaleString("en-IN")}
+              change="+18% vs prior period"
+              detail="79% of created RFQs"
+              title="RFQs with complete provenance and no unresolved decision-critical issues."
+            />
+            <AnalyticsKpi
+              icon={CircleDollarSign}
+              label="Verified spend"
+              value={`₹${kpis.verifiedSpend}M`}
+              change="+12% coverage"
+              detail="Across qualified comparisons"
+              title="Addressable spend backed by verified, comparable commercial facts."
+            />
+            <AnalyticsKpi
+              icon={TrendingUp}
+              label="Savings identified"
+              value={`₹${kpis.savings}M`}
+              change="5.5% weighted rate"
+              detail="Against qualified baseline"
+              title="Difference between approved scenario and the policy-defined qualified baseline."
+            />
+            <AnalyticsKpi
+              icon={Timer}
+              label="Buyer hours saved"
+              value={kpis.hoursSaved.toLocaleString("en-IN")}
+              change="3.99h per ready RFQ"
+              detail="Compilation + comparison"
+              title="Estimated active work avoided versus the validated manual benchmark."
+            />
+          </div>
+
+          <div className="analytics-grid analytics-grid-primary">
+            <AnalyticsPanel
+              eyebrow="VELOCITY"
+              title="Decision readiness is rising as cycle time falls"
+              subtitle="Weekly output and median active cycle time"
+              icon={TrendingUp}
+            >
+              <div
+                className="analytics-chart analytics-line-chart"
+                role="img"
+                aria-label="Decision-ready RFQs and cycle time trend"
+              >
+                <ResponsiveContainer width="100%" height={230}>
+                  <LineChart data={trend} margin={{ top: 10, right: 8, left: -24, bottom: 0 }}>
+                    <CartesianGrid stroke="#e7ece9" vertical={false} />
+                    <XAxis dataKey="label" tick={{ fontSize: 9, fill: "#718078" }} axisLine={false} tickLine={false} />
+                    <YAxis yAxisId="left" tick={{ fontSize: 9, fill: "#718078" }} axisLine={false} tickLine={false} />
+                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 9, fill: "#718078" }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{ borderRadius: 8, borderColor: "#dfe6e2", fontSize: 10 }} />
+                    <Legend wrapperStyle={{ fontSize: 9 }} />
+                    <Line yAxisId="left" type="monotone" dataKey="ready" name="Decision-ready RFQs" stroke="#2f8a68" strokeWidth={2.5} dot={{ r: 2 }} />
+                    <Line yAxisId="right" type="monotone" dataKey="cycle" name="Cycle time (hours)" stroke="#d7ee48" strokeWidth={2.5} dot={{ r: 2 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </AnalyticsPanel>
+
+            <AnalyticsPanel
+              eyebrow="THROUGHPUT"
+              title="RFQ outcome funnel"
+              subtitle="Conversion from created RFQ to human-approved award"
+              icon={Route}
+            >
+              <div className="analytics-funnel">
+                {outcomeFunnel.map((item, index) => (
+                  <div className="analytics-funnel-row" key={item.label}>
+                    <div>
+                      <span>{item.label}</span>
+                      <strong>{item.value}</strong>
+                    </div>
+                    <div className="analytics-funnel-track">
+                      <i style={{ width: `${item.rate}%` }} />
+                    </div>
+                    <small>
+                      {item.rate}%{index ? ` · ${outcomeFunnel[index - 1].value - item.value} exited` : ""}
+                    </small>
+                  </div>
+                ))}
+              </div>
+              <div className="analytics-insight">
+                <ArrowUpRight size={14} />
+                <span>
+                  <strong>Largest controllable drop: decision readiness</strong>
+                  <small>
+                    38 RFQs are waiting on vendor clarification or policy context.
+                  </small>
+                </span>
+              </div>
+            </AnalyticsPanel>
+          </div>
+
+          <div className="analytics-grid analytics-grid-secondary">
+            <AnalyticsPanel
+              eyebrow="COMMERCIAL IMPACT"
+              title="Identified savings by category"
+              subtitle="₹ millions against qualified baseline"
+              icon={CircleDollarSign}
+            >
+              <div className="analytics-chart" role="img" aria-label="Savings by procurement category">
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={savingsData} layout="vertical" margin={{ top: 8, right: 20, left: 0, bottom: 0 }}>
+                    <CartesianGrid stroke="#edf1ef" horizontal={false} />
+                    <XAxis type="number" tick={{ fontSize: 9, fill: "#718078" }} axisLine={false} tickLine={false} />
+                    <YAxis type="category" dataKey="category" width={76} tick={{ fontSize: 9, fill: "#42584d" }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{ borderRadius: 8, borderColor: "#dfe6e2", fontSize: 10 }} />
+                    <Bar dataKey="savings" name="Savings ₹M" fill="#2f8a68" radius={[0, 4, 4, 0]} barSize={18} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </AnalyticsPanel>
+
+            <AnalyticsPanel
+              eyebrow="BUYER EFFORT"
+              title="Cycle time by workflow stage"
+              subtitle="Current active hours versus manual baseline"
+              icon={Clock3}
+            >
+              <div className="analytics-cycle">
+                {cycleStages.map((stage) => (
+                  <div key={stage.label}>
+                    <div>
+                      <span>{stage.label}</span>
+                      <strong>{stage.current}h</strong>
+                      <small>{Math.round((1 - stage.current / stage.baseline) * 100)}% faster</small>
+                    </div>
+                    <div className="analytics-cycle-track">
+                      <i style={{ width: `${Math.min(100, (stage.current / stage.baseline) * 100)}%` }} />
+                      <b title={`Manual baseline: ${stage.baseline} hours`} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </AnalyticsPanel>
+
+            <AnalyticsPanel
+              eyebrow="TRUST FRICTION"
+              title="Why buyers intervene"
+              subtitle="Share of material review issues"
+              icon={PieChartIcon}
+            >
+              <div className="analytics-pie-layout">
+                <div className="analytics-chart" role="img" aria-label="Buyer intervention issue types">
+                  <ResponsiveContainer width="100%" height={190}>
+                    <PieChart>
+                      <Pie data={issueDrivers} dataKey="value" nameKey="name" innerRadius={48} outerRadius={76} paddingAngle={2}>
+                        {issueDrivers.map((entry) => (
+                          <Cell key={entry.name} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={{ borderRadius: 8, borderColor: "#dfe6e2", fontSize: 10 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="analytics-pie-center">
+                    <strong>563</strong>
+                    <span>reviews</span>
+                  </div>
+                </div>
+                <div className="analytics-legend-list">
+                  {issueDrivers.map((item) => (
+                    <div key={item.name}>
+                      <i style={{ background: item.color }} />
+                      <span>{item.name}</span>
+                      <strong>{item.value}%</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </AnalyticsPanel>
+          </div>
+
+          <AnalyticsPanel
+            eyebrow="SUPPLIER INTELLIGENCE"
+            title="Competitiveness and response quality"
+            subtitle="Use as sourcing context—not as an autonomous supplier score"
+            icon={GitCompareArrows}
+            wide
+          >
+            <div className="analytics-table-wrap">
+              <table className="analytics-table">
+                <thead>
+                  <tr>
+                    <th>Supplier</th>
+                    <th>Win rate</th>
+                    <th>Quote coverage</th>
+                    <th>Median response</th>
+                    <th>Price variance</th>
+                    <th>Signal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {supplierPerformance.map((supplier) => (
+                    <tr key={supplier.supplier}>
+                      <td><strong>{supplier.supplier}</strong></td>
+                      <td>{supplier.winRate}</td>
+                      <td>{supplier.coverage}</td>
+                      <td>{supplier.response}</td>
+                      <td>{supplier.variance}</td>
+                      <td><span className="analytics-status">{supplier.status}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </AnalyticsPanel>
+        </TabsContent>
+
+        <TabsContent value="product" className="analytics-tab-content">
+          <div className="analytics-kpis product-kpis">
+            <AnalyticsKpi icon={ShieldCheck} label="Provenance coverage" value="99.2%" change="+0.7pp" detail="Material facts with source" title="Share of material ledger facts linked to inspectable source evidence." />
+            <AnalyticsKpi icon={AlertTriangle} label="Decision-impact error" value="0.18%" change="-0.11pp" detail="Per decision-ready RFQ" title="Errors that can change ranking, eligibility, landed cost or allocation." inverse />
+            <AnalyticsKpi icon={Target} label="Critical escalation recall" value="100%" change="Hard gate met" detail="24 / 24 eval cases" title="Share of known decision-critical uncertainty correctly routed to review." />
+            <AnalyticsKpi icon={CircleDollarSign} label="Cost / ready RFQ" value="₹182" change="-14%" detail="Models + deterministic tools" title="Inference and processing cost divided by decision-ready RFQs." inverse />
+            <AnalyticsKpi icon={Timer} label="P95 processing" value="3m 42s" change="-38s" detail="Artifact to compiled ledger" title="95th percentile end-to-end compilation time, excluding human review." inverse />
+          </div>
+
+          <div className="analytics-grid analytics-product-top">
+            <AnalyticsPanel eyebrow="QUALITY TREND" title="Decision-chain quality, not one model score" subtitle="Weekly audited performance across four protected metrics" icon={Activity}>
+              <div className="analytics-chart" role="img" aria-label="AI product quality trend">
+                <ResponsiveContainer width="100%" height={235}>
+                  <LineChart data={qualityTrend} margin={{ top: 10, right: 8, left: -20, bottom: 0 }}>
+                    <CartesianGrid stroke="#e7ece9" vertical={false} />
+                    <XAxis dataKey="label" tick={{ fontSize: 9, fill: "#718078" }} axisLine={false} tickLine={false} />
+                    <YAxis domain={[90, 100]} tick={{ fontSize: 9, fill: "#718078" }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{ borderRadius: 8, borderColor: "#dfe6e2", fontSize: 10 }} />
+                    <Legend wrapperStyle={{ fontSize: 9 }} />
+                    <Line type="monotone" dataKey="extraction" name="Extraction" stroke="#2f8a68" strokeWidth={2.2} dot={false} />
+                    <Line type="monotone" dataKey="mapping" name="Line mapping" stroke="#d9a83e" strokeWidth={2.2} dot={false} />
+                    <Line type="monotone" dataKey="escalation" name="Escalation recall" stroke="#1b4839" strokeWidth={2.2} dot={false} />
+                    <Line type="monotone" dataKey="provenance" name="Provenance" stroke="#83aa9a" strokeWidth={2.2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </AnalyticsPanel>
+
+            <AnalyticsPanel eyebrow="PIPELINE PERFORMANCE" title="Latency profile by system stage" subtitle="P50 and P95 seconds; model calls dominate wall time" icon={Timer}>
+              <div className="analytics-chart" role="img" aria-label="QuoteIQ pipeline latency profile">
+                <ResponsiveContainer width="100%" height={235}>
+                  <BarChart data={latencyProfile} layout="vertical" margin={{ top: 8, right: 18, left: 12, bottom: 0 }}>
+                    <CartesianGrid stroke="#edf1ef" horizontal={false} />
+                    <XAxis type="number" tick={{ fontSize: 9, fill: "#718078" }} axisLine={false} tickLine={false} />
+                    <YAxis type="category" dataKey="stage" width={92} tick={{ fontSize: 9, fill: "#42584d" }} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={{ borderRadius: 8, borderColor: "#dfe6e2", fontSize: 10 }} />
+                    <Legend wrapperStyle={{ fontSize: 9 }} />
+                    <Bar dataKey="p50" name="P50 seconds" fill="#84aa9b" radius={[0, 3, 3, 0]} barSize={8} />
+                    <Bar dataKey="p95" name="P95 seconds" fill="#d5f24a" radius={[0, 3, 3, 0]} barSize={8} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </AnalyticsPanel>
+          </div>
+
+          <div className="analytics-grid analytics-product-middle">
+            <AnalyticsPanel eyebrow="INTERVENTION ROUTER" title="Root causes of human review" subtitle="Use the cause—not the click—to improve the right system" icon={UserCheck}>
+              <div className="analytics-driver-list">
+                {interventionDrivers.map((driver) => (
+                  <div key={driver.label}>
+                    <div><span>{driver.label}</span><strong>{driver.count}</strong></div>
+                    <div className="analytics-driver-track"><i style={{ width: `${driver.value}%` }} /></div>
+                    <small>{driver.value}% of interventions</small>
+                  </div>
+                ))}
+              </div>
+            </AnalyticsPanel>
+
+            <AnalyticsPanel eyebrow="EARNED AUTONOMY" title="Control level by narrow task" subtitle="Capability ∩ policy ∩ permission = actual autonomy" icon={ShieldCheck}>
+              <div className="analytics-autonomy-list">
+                {autonomyTasks.map((task) => (
+                  <div key={task.task}>
+                    <span><strong>{task.task}</strong><small>{task.evidence}</small></span>
+                    <div className="analytics-levels" aria-label={`${task.label}, autonomy level ${task.level}`}>
+                      {[0, 1, 2, 3].map((level) => <i className={level <= task.level ? "active" : ""} key={level} />)}
+                    </div>
+                    <b>{task.label}</b>
+                  </div>
+                ))}
+              </div>
+            </AnalyticsPanel>
+
+            <AnalyticsPanel eyebrow="EVALUATION HEALTH" title="Protected release queue" subtitle="No production change bypasses its regression and shadow gates" icon={TestTube2}>
+              <div className="analytics-eval-list">
+                {evaluationQueue.map((item) => (
+                  <div key={item.suite}>
+                    <span className={`analytics-severity ${item.severity.toLowerCase()}`}>{item.severity}</span>
+                    <span><strong>{item.suite}</strong><small>{item.cases} cases · {item.owner}</small></span>
+                    <b>{item.pass}</b>
+                  </div>
+                ))}
+              </div>
+              <div className="analytics-insight safe">
+                <ShieldCheck size={14} />
+                <span><strong>All hard gates currently pass</strong><small>Packaging L3 remains in shadow until 1,000 cases.</small></span>
+              </div>
+            </AnalyticsPanel>
+          </div>
+
+          <AnalyticsPanel eyebrow="UNIT ECONOMICS" title="Model usage, reliability and cost" subtitle="Provider cost is allocated to the task and decision outcome it supports" icon={Calculator} wide>
+            <div className="analytics-table-wrap">
+              <table className="analytics-table">
+                <thead><tr><th>Task</th><th>Model / tool</th><th>Volume</th><th>Period cost</th><th>Success</th><th>Fallback</th></tr></thead>
+                <tbody>
+                  {modelUsage.map((item) => (
+                    <tr key={item.task}>
+                      <td><strong>{item.task}</strong></td>
+                      <td>{item.model}</td>
+                      <td>{item.volume}</td>
+                      <td>{item.cost}</td>
+                      <td>{item.success}</td>
+                      <td>{item.fallback}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </AnalyticsPanel>
+        </TabsContent>
+      </Tabs>
+
+      <footer className="analytics-definition-bar">
+        <Database size={15} />
+        <span>
+          <strong>Metric lineage</strong>
+          <small>
+            RFQ events + versioned Bid Ledger + Evidence / Answer Packets + model and tool traces. Snapshot 29 Aug 2026, 18:42 IST. Demo data is synthetic.
+          </small>
+        </span>
+        <span className="analytics-freshness">All sources fresh</span>
+      </footer>
+    </>
+  );
+}
+
+function AnalyticsKpi({
+  icon: Icon,
+  label,
+  value,
+  change,
+  detail,
+  title,
+  inverse = false,
+}: {
+  icon: typeof Gauge;
+  label: string;
+  value: string;
+  change: string;
+  detail: string;
+  title: string;
+  inverse?: boolean;
+}) {
+  return (
+    <article className="analytics-kpi" title={title}>
+      <div><Icon size={15} /></div>
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small className={inverse ? "inverse" : ""}>
+        <ArrowUpRight size={11} /> {change}
+      </small>
+      <p>{detail}</p>
+    </article>
+  );
+}
+
+function AnalyticsPanel({
+  eyebrow,
+  title,
+  subtitle,
+  icon: Icon,
+  children,
+  wide = false,
+}: {
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  icon: typeof Gauge;
+  children: React.ReactNode;
+  wide?: boolean;
+}) {
+  return (
+    <section className={`analytics-panel panel${wide ? " analytics-wide" : ""}`}>
+      <header>
+        <div className="analytics-panel-icon"><Icon size={15} /></div>
+        <div>
+          <span>{eyebrow}</span>
+          <h2>{title}</h2>
+          <p>{subtitle}</p>
+        </div>
+      </header>
+      {children}
+    </section>
+  );
+}
+
 function TrustLearning() {
   const [traceStep, setTraceStep] = useState(0);
   const [packetSection, setPacketSection] = useState("decision");
@@ -3204,6 +3826,15 @@ function Documentation({ onNavigate }: { onNavigate: (view: View) => void }) {
         "award scenario optimizer OR tools cost speed split concentration",
     },
     {
+      id: "analytics",
+      category: "Workflows",
+      title: "Analytics",
+      summary:
+        "Buyer outcomes and product/AI operating health in one governed measurement layer.",
+      keywords:
+        "analytics dashboard savings spend cycle time throughput quality provenance latency cost filters autonomy",
+    },
+    {
       id: "packets",
       category: "Trust system",
       title: "Evidence & Answer Packets",
@@ -3910,6 +4541,73 @@ function DocArticle({
         </p>
         <button className="doc-link" onClick={() => onNavigate("decision")}>
           Open Award Scenarios <ArrowRight size={14} />
+        </button>
+      </div>
+    );
+  if (id === "analytics")
+    return (
+      <div className="doc-body">
+        <span className="doc-label">WORKFLOW</span>
+        <h1>Analytics</h1>
+        <p className="doc-lede">
+          Analytics connects procurement outcomes to the quality, cost and
+          control posture of the system producing them. It deliberately keeps
+          the enterprise buyer view separate from the product and AI operations
+          view while preserving one filter scope and one metric lineage.
+        </p>
+        <h2>Buyer outcomes</h2>
+        <table className="doc-table">
+          <thead>
+            <tr>
+              <th>Question</th>
+              <th>Metric or view</th>
+              <th>Decision supported</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Are we moving more qualified work?</td>
+              <td>Decision-ready RFQs, outcome funnel and cycle time</td>
+              <td>Capacity and workflow improvement</td>
+            </tr>
+            <tr>
+              <td>Is the value material?</td>
+              <td>Verified spend, identified savings and hours saved</td>
+              <td>Adoption and category prioritization</td>
+            </tr>
+            <tr>
+              <td>Where is trust friction?</td>
+              <td>Intervention drivers and supplier response quality</td>
+              <td>Clarification, policy and sourcing action</td>
+            </tr>
+          </tbody>
+        </table>
+        <h2>Product & AI operations</h2>
+        <p>
+          Product managers see provenance coverage, decision-impact error,
+          critical escalation recall, cost per decision-ready RFQ and P95
+          processing time. Quality trend, stage latency, intervention causes,
+          task-level autonomy, protected evaluation gates and model unit
+          economics make regressions diagnosable rather than hiding them inside
+          a blended accuracy score.
+        </p>
+        <h2>Scope and metric contracts</h2>
+        <div className="doc-chip-grid">
+          <span>Period</span>
+          <span>Category</span>
+          <span>Business unit</span>
+          <span>Plant / region</span>
+          <span>RFQ status</span>
+        </div>
+        <p>
+          The north-star metric is decision-ready RFQs per active buyer-hour.
+          An RFQ enters the numerator only when material facts have inspectable
+          provenance and no unresolved critical issue remains. Savings use the
+          policy-defined qualified baseline; supplier analytics are sourcing
+          context, not an autonomous supplier score.
+        </p>
+        <button className="doc-link" onClick={() => onNavigate("analytics")}>
+          Open Analytics <ArrowRight size={14} />
         </button>
       </div>
     );

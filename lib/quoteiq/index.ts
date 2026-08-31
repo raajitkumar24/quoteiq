@@ -1,4 +1,5 @@
 export * from "./config";
+export * from "./analytics";
 export * from "./decision-engine";
 export * from "./demo-engine";
 export * from "./normalization";

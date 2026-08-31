@@ -19,9 +19,20 @@ test("README documents the complete product journey", async () => {
     "## Core domain model",
     "## Evaluation strategy",
     "## Observability and auditability",
+    "### 4. Analytics: connect procurement value to system quality",
   ]) {
     assert.match(readme, new RegExp(section.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
+});
+
+test("analytics metric dictionary and API documentation are present", async () => {
+  const analytics = await readFile("docs/analytics.md", "utf8");
+  const api = await readFile("docs/api.md", "utf8");
+
+  assert.match(analytics, /## Metric dictionary/);
+  assert.match(analytics, /Decision-ready RFQs per buyer-hour/);
+  assert.match(analytics, /## Data lineage/);
+  assert.match(api, /GET \/api\/analytics/);
 });
 
 test("README product snapshots are present and non-empty", async () => {
