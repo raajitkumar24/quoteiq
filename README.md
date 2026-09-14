@@ -627,7 +627,7 @@ OPENAI_API_KEY=your_openai_key
 Optional model overrides:
 
 ```bash
-QUOTEIQ_EXTRACTION_MODEL=gemini-2.5
+QUOTEIQ_EXTRACTION_MODEL=gemini-2.5-pro
 QUOTEIQ_REASONING_MODEL=gpt
 QUOTEIQ_EMBEDDING_MODEL=text-embedding-3-large
 ```
@@ -669,7 +669,7 @@ The exact request and response contracts are documented in
 | `QUOTEIQ_MODE` | No | `demo` | Select deterministic demo behavior or live provider adapters |
 | `GOOGLE_AI_API_KEY` | Live mode | — | Server-side credential for multimodal extraction |
 | `OPENAI_API_KEY` | Live mode | — | Server-side credential for query planning and grounded explanation |
-| `QUOTEIQ_EXTRACTION_MODEL` | No | `gemini-2.5` | Override the extraction model identifier |
+| `QUOTEIQ_EXTRACTION_MODEL` | No | `gemini-2.5-pro` | Override the extraction model identifier |
 | `QUOTEIQ_REASONING_MODEL` | No | `gpt-5` | Override the reasoning model identifier |
 | `QUOTEIQ_EMBEDDING_MODEL` | No | `text-embedding-3-large` | Override the retrieval embedding model identifier |
 
