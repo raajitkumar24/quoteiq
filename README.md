@@ -442,8 +442,8 @@ approval remain human-controlled.
 |---|---|---|---|
 | Mixed-layout document and image extraction | Gemini 2.5 Pro | Multimodal tables, scans, photos and commercial language | Cannot write directly to a decision |
 | RFQ candidate retrieval | text-embedding-3-large | Efficient semantic shortlist | Similarity cannot finalize a match |
-| Ambiguous mapping and term adjudication | GPT-5.4 | Strong contextual reasoning | High impact ambiguity routes to review |
-| Query planning and grounded explanation | GPT-5.4 | Converts intent into a typed plan and explains verified output | Cannot bypass readiness or policy |
+| Ambiguous mapping and term adjudication | GPT | Strong contextual reasoning | High impact ambiguity routes to review |
+| Query planning and grounded explanation | GPT | Converts intent into a typed plan and explains verified output | Cannot bypass readiness or policy |
 | Currency, UOM, discounts, totals and landed cost | TypeScript deterministic services | Reproducible, testable arithmetic | No LLM arithmetic |
 | Award allocation | Deterministic scenario engine; OR-Tools-compatible boundary | Feasible policy constrained scenarios | Produces options, not awards |
 | Intervention routing | Policy engine | Confidence, impact, policy and reversibility | Enterprise/user controls take precedence |
@@ -627,8 +627,8 @@ OPENAI_API_KEY=your_openai_key
 Optional model overrides:
 
 ```bash
-QUOTEIQ_EXTRACTION_MODEL=gemini-2.5-pro
-QUOTEIQ_REASONING_MODEL=gpt-5.4
+QUOTEIQ_EXTRACTION_MODEL=gemini-2.5
+QUOTEIQ_REASONING_MODEL=gpt
 QUOTEIQ_EMBEDDING_MODEL=text-embedding-3-large
 ```
 
@@ -669,8 +669,8 @@ The exact request and response contracts are documented in
 | `QUOTEIQ_MODE` | No | `demo` | Select deterministic demo behavior or live provider adapters |
 | `GOOGLE_AI_API_KEY` | Live mode | — | Server-side credential for multimodal extraction |
 | `OPENAI_API_KEY` | Live mode | — | Server-side credential for query planning and grounded explanation |
-| `QUOTEIQ_EXTRACTION_MODEL` | No | `gemini-2.5-pro` | Override the extraction model identifier |
-| `QUOTEIQ_REASONING_MODEL` | No | `gpt-5.4` | Override the reasoning model identifier |
+| `QUOTEIQ_EXTRACTION_MODEL` | No | `gemini-2.5` | Override the extraction model identifier |
+| `QUOTEIQ_REASONING_MODEL` | No | `gpt-5` | Override the reasoning model identifier |
 | `QUOTEIQ_EMBEDDING_MODEL` | No | `text-embedding-3-large` | Override the retrieval embedding model identifier |
 
 Configuration is loaded by [`lib/quoteiq/config.ts`](lib/quoteiq/config.ts).
